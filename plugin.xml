@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            id="com.yp.core.data.plugin.views.Connect"
+            name="%Connect.View.Name"
+            icon="icons/sample.gif"
+            class="com.yp.core.data.plugin.views.Connect">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="com.yp.core.data.plugin.handlers.ConnectionHandler"
+            commandId="commons-data-plugin.commands.ConnectCommand">
+      </handler>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            locationURI="popup:org.eclipse.jdt.ui.PackageExplorer?endof=group.edit">         
+            <command
+                  commandId="commons-data-plugin.commands.ConnectCommand"
+                  icon="icons/sample.png"
+                  id="commons-data-plugin.toolbars.sampleCommand"
+                  tooltip="%Connect.View.Name" label="%Connect.View.Name" style="push">
+            </command>        
+      </menuContribution>  
+   </extension>
+</plugin>

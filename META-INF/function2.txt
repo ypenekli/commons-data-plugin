@@ -1,0 +1,14 @@
+
+	protected final static String @FieldName = "@ColumnName";
+
+	public @Type get@FunctionName() {
+		return (@Type) get(@FieldName);
+	}
+	
+	public void set@FunctionName(@Type p@FunctionName){
+		setField(@FieldName, p@FunctionName, false);
+	}
+	
+	public boolean is@FunctionNameNull(){
+		return isNull(@FieldName);
+	}

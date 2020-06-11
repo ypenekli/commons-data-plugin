@@ -1,0 +1,28 @@
+
+	protected final static String @FieldName = "@ColumnName";
+		
+	public BigDecimal get@FunctionNameDb() {
+		return (@Type) get(@FieldName);
+	}
+	
+	public void set@FunctionNameDb(BigDecimal p@FunctionName){
+		m@FunctionName = null;
+		set(@FieldName, p@FunctionName);
+	}
+
+	protected Date m@FunctionName;
+
+	public Date get@FunctionName() {
+		if (m@FunctionName == null)
+			m@FunctionName = DateTime.asDate((BigDecimal) get(@FieldName));
+		return m@FunctionName;
+	}
+	
+	public void set@FunctionName(Date p@FunctionName) {
+		m@FunctionName = p@FunctionName;
+		set(@FieldName, DateTime.asDbDateTime(p@FunctionName));
+	}
+	
+	public boolean is@FunctionNameNull(){
+		return isNull(@FieldName);
+	}
