@@ -184,61 +184,16 @@ public class Renderer {
 			writer.write("package " + pPackage);
 			writer.write(EOL_WITH_AFTER_COMMA);
 			writer.write(EOL_DOUBLE);
-
-			for (String dI : getImportList()) {
-				writer.write("import " + dI);
+			for (String impt : importList) {
+				writer.write("import " + impt);
 				writer.write(EOL_WITH_AFTER_COMMA);
 			}
 			writer.write(EOL_DOUBLE);
-			writer.write("public class " + className + " extends DataEntity {");
+			writer.write(String.format("public class %s extends DataEntity {", className));
 
 			writer.write(EOL_DOUBLE);
-
-			writer.write("	private static String SCHEMA_NAME = \"" + getSchemaName() + "\"");
-			writer.write(EOL_WITH_AFTER_COMMA);
-			writer.write("	private static String TABLE_NAME = \"" + getTableName() + "\"");
-			writer.write(EOL_WITH_AFTER_COMMA);
+			writeConstructors(writer, className);
 			writer.write(EOL_DOUBLE);
-			writer.write("	public " + className + "(){\n");
-			writer.write("		super()");
-			writer.write(EOL_WITH_AFTER_COMMA);
-			writer.write("		className = \"" + className + "\"");
-			writer.write(EOL_WITH_AFTER_COMMA);
-			if (!getKeyList().isEmpty()) {
-				String comma = "";
-				writer.write("		setPrimaryKeys(");
-				for (Column column : keyList) {
-					writer.write(comma + column.getFieldName());
-					comma = ", ";
-				}
-				writer.write(")");
-				writer.write(EOL_WITH_AFTER_COMMA);
-				for (Column column : keyList) {
-					if (column.isReadonly()) {
-						writer.write("		setFieldReadonly(" + column.getFieldName() + ", true)");
-						writer.write(EOL_WITH_AFTER_COMMA);
-					}
-				}
-			}
-			writer.write("	}\n");			
-			String comma = "";
-			if (!getKeyList().isEmpty()) {
-				writer.write("	public " + className + "(");
-				for (Column column : keyList) {
-					writer.write(comma + column.getColumnType() + " p" + column.getColumnName());
-					comma = ", ";
-				}
-				writer.write("){\n");
-				writer.write("		this()");
-				writer.write(EOL_WITH_AFTER_COMMA);
-				for (Column column : keyList) {
-					writer.write(String.format(SET, column.getFieldName(), column.getColumnName()));
-					writer.write(EOL_WITH_AFTER_COMMA);
-				}
-
-				writer.write("	}");
-				writer.write(EOL_DOUBLE);
-			}
 
 			for (Column column : columnList) {
 				writeColumn(writer, column);
@@ -257,7 +212,7 @@ public class Renderer {
 			writer.write(EOL_WITH_AFTER_COMMA);
 			writer.write("	}");
 			writer.write(EOL_DOUBLE);
-
+			writer.write("}");
 			writer.flush();
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, e.getMessage());
@@ -277,6 +232,58 @@ public class Renderer {
 		return file;
 	}
 
+	private void writeConstructors(BufferedWriter pWriter, String className) throws IOException {
+		pWriter.write("	private static String SCHEMA_NAME = \"" + getSchemaName() + "\"");
+		pWriter.write(EOL_WITH_AFTER_COMMA);
+		pWriter.write("	private static String TABLE_NAME = \"" + getTableName() + "\"");
+		pWriter.write(EOL_WITH_AFTER_COMMA);
+		pWriter.write(EOL_DOUBLE);
+
+		pWriter.write("	public " + className + "(){\n");
+		pWriter.write("		super()");
+		pWriter.write(EOL_WITH_AFTER_COMMA);
+		pWriter.write("		className = \"" + className + "\"");
+		pWriter.write(EOL_WITH_AFTER_COMMA);
+
+		if (!keyList.isEmpty()) {
+			String comma = "";
+			pWriter.write("		setPrimaryKeys(");
+			for (Column column : keyList) {
+				pWriter.write(comma + column.getFieldName());
+				comma = ", ";
+			}
+			pWriter.write(")");
+			pWriter.write(EOL_WITH_AFTER_COMMA);
+			for (Column column : keyList) {
+				if (column.isReadonly()) {
+					pWriter.write("		setFieldReadonly(" + column.getFieldName() + ", true)");
+					pWriter.write(EOL_WITH_AFTER_COMMA);
+				}
+			}
+		}
+		pWriter.write("	}");
+		
+		pWriter.write(EOL_DOUBLE);		
+		
+		if (!keyList.isEmpty()) {
+			String comma = "";
+			pWriter.write("	public " + className + "(");
+			for (Column column : keyList) {
+				pWriter.write(comma + column.getColumnType() + " p" + column.getColumnName());
+				comma = ", ";
+			}
+			pWriter.write("){\n");
+			pWriter.write("		this()");
+			pWriter.write(EOL_WITH_AFTER_COMMA);
+			for (Column column : keyList) {
+				pWriter.write(String.format(SET, column.getFieldName(), column.getColumnName()));
+				pWriter.write(EOL_WITH_AFTER_COMMA);
+			}
+
+			pWriter.write("	}");
+		}
+	}
+
 	private void writeColumn(BufferedWriter pWriter, Column pColumn) throws IOException {
 		int i = 0;
 		if (!pColumn.isReadonly()) {
@@ -292,8 +299,11 @@ public class Renderer {
 		pWriter.write(EOL_DOUBLE);
 	}
 
-	private static String[] functions = new String[] { getFileResource("function1.txt"),
-			getFileResource("function2.txt"), getFileResource("function3.txt"), getFileResource("function4.txt") };
+	private static String[] functions = new String[] { 
+			getFileResource("function1.txt"),//i=0 writable
+			getFileResource("function2.txt"), //i=1 readonly
+			getFileResource("function3.txt"), //i=2 date
+			getFileResource("function4.txt") }; // i= 3 datetime
 
 	private static String getFileResource(String pFileName) {
 		try (BufferedInputStream bis = new BufferedInputStream(
@@ -306,8 +316,8 @@ public class Renderer {
 				result = bis.read();
 			}
 			return buf.toString();
-		} catch (IOException dE) {
-			dE.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 		return "";
 	}

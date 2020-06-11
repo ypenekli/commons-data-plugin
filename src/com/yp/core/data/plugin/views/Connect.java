@@ -28,10 +28,16 @@ import org.eclipse.datatools.connectivity.ProfileManager;
 import org.eclipse.fx.ui.workbench3.FXViewPart;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.ui.actions.BuildActionGroup;
+import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.jface.window.Window;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchPart;
+import org.eclipse.ui.IWorkbenchSite;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.dialogs.CheckedTreeSelectionDialog;
 import org.eclipse.ui.ide.IDE;
 
 import com.yp.core.data.plugin.model.Column;
@@ -44,6 +50,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
@@ -53,6 +60,10 @@ public class Connect extends FXViewPart implements Initializable {
 
 	@Inject
 	Logger logger;
+	@Inject
+	IWorkbench workBench;
+	@Inject
+	IWorkbenchSite site;
 
 	public static final String VIEW_ID = "com.yp.core.data.plugin.views.Connect";
 	public static final String PACKAGE_ID = "org.eclipse.jdt.ui.PackageExplorer";
@@ -74,7 +85,7 @@ public class Connect extends FXViewPart implements Initializable {
 	@FXML
 	private TextField txtUserPassw;
 	@FXML
-	private TextField txtPackageName;
+	private Label txtPackageName;
 
 	private Connection connection;
 	private Renderer renderer;
@@ -88,7 +99,7 @@ public class Connect extends FXViewPart implements Initializable {
 	@Override
 	protected Scene createFxScene() {
 		FXMLLoader loader = new FXMLLoader(getClass().getResource("Connect.fxml"),
-				ResourceBundle.getBundle("core.plugin.config.Messages"));
+				ResourceBundle.getBundle("Messages"));
 		Pane pane;
 		try {
 			pane = loader.load();
@@ -252,13 +263,13 @@ public class Connect extends FXViewPart implements Initializable {
 	}
 
 	@FXML
-	public void onConnectDb(final ActionEvent arg0) {
+	public void onConnectDbClicked(final ActionEvent arg0) {
 		buildConnection();
 		fillSchemaNames();
 	}
 
 	@FXML
-	public void onGenerateDataEntity(final ActionEvent arg0) {
+	public void onGenerateDataEntityClicked(final ActionEvent arg0) {
 		prepareRenderer();
 
 		String file = renderer.render(packagee);
@@ -409,5 +420,17 @@ public class Connect extends FXViewPart implements Initializable {
 		packagee = pPackagee;
 		if (packagee != null)
 			txtPackageName.setText(packagee.getElementName());
+	}
+
+	@FXML
+	public void onBrowseClicked(final ActionEvent arg0) {
+		Shell shell = site.getShell();
+		CheckedTreeSelectionDialog dialog = new CheckedTreeSelectionDialog(shell, new LabelProvider(), null);		
+		dialog.setTitle("Which operating system are you using");
+		// user pressed cancel
+		if (dialog.open() == Window.OK) {
+			//Object[] result = dialog.getResult();
+		}
+
 	}
 }

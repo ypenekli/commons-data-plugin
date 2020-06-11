@@ -1,5 +1,4 @@
-
-	protected final static String @FieldName = "@ColumnName";
+	protected static final String @FieldName = "@ColumnName";
 
 	public @Type get@FunctionName() {
 		return (@Type) get(@FieldName);

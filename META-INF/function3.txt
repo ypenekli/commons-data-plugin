@@ -1,5 +1,4 @@
-
-	protected final static String @FieldName = "@ColumnName";
+	protected static final String @FieldName = "@ColumnName";
 		
 	public BigDecimal get@FunctionNameDb() {
 		return (@Type) get(@FieldName);

@@ -4,7 +4,7 @@ Bundle-Name: Commons-data-plugin
 Bundle-SymbolicName: commons-data-plugin;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Activator: com.yp.core.data.plugin.Activator
-Bundle-Localization: plugin
+Bundle-Localization: Messages
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  org.eclipse.fx.ui.workbench3,

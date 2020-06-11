@@ -4,8 +4,8 @@ import java.util.Locale;
 
 public class Column {
 	public static final Locale LOCALE_EN = new Locale("en", "US");
-	private static final String DATE = "DATE";
-	private static final String DATETIME = "DATETIME";
+	private static final String DATE = "date";
+	private static final String DATETIME = "datetime";
 
 	private String columnName, fieldName, functionName, columnType, columnTypeFullName;
 	private boolean isKey, isAutoIncrement, isReadonly, isDate;
@@ -34,10 +34,10 @@ public class Column {
 	public void setColumnName(String pColumnName) {
 		if (!isNull(pColumnName)) {
 			pColumnName = pColumnName.trim();
-			columnName = pColumnName;
+			columnName = pColumnName.toLowerCase(LOCALE_EN);
 			fieldName = pColumnName.toUpperCase(LOCALE_EN);
 			functionName = ucaseFirsChar(pColumnName);
-			isDate = pColumnName.endsWith(DATE) || pColumnName.endsWith(DATETIME);
+			isDate = columnName.endsWith(DATE) || columnName.endsWith(DATETIME);
 		}
 	}
 

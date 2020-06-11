@@ -36,7 +36,7 @@
 			<Label 		GridPane.columnIndex="1" GridPane.rowIndex="3" text="%colon" />
 			<TextField  GridPane.columnIndex="2" GridPane.rowIndex="3" fx:id="txtUserPassw" prefWidth="300" />	
 			
-			<Button     GridPane.columnIndex="2" GridPane.rowIndex="4"  text="%Connect.Connect" onAction="#onConnectDb"/>	
+			<Button     GridPane.columnIndex="2" GridPane.rowIndex="4"  text="%Connect.Connect" onAction="#onConnectDbClicked"/>	
 			
 			<Label 		GridPane.columnIndex="0" GridPane.rowIndex="5" GridPane.halignment="right"  text="%Connect.Schema.Name" style="-fx-font-weight: bold;"/>			
 			<Label 		GridPane.columnIndex="1" GridPane.rowIndex="5" text="%colon" />
@@ -48,7 +48,8 @@
 			
 			<Label 		GridPane.columnIndex="0" GridPane.rowIndex="7" GridPane.halignment="right"  text="%Connect.Dataentity.Package" style="-fx-font-weight: bold;"/>			
 			<Label 		GridPane.columnIndex="1" GridPane.rowIndex="7" text="%colon" />
-			<TextField  GridPane.columnIndex="2" GridPane.rowIndex="7" fx:id="txtPackageName" prefWidth="300" />	
+			<Label  	GridPane.columnIndex="2" GridPane.rowIndex="7" fx:id="txtPackageName" style="-fx-font-weight: bold;" />	
+			<Button  	GridPane.columnIndex="3" GridPane.rowIndex="7" text="%Browse" onAction="#onBrowseClicked" visible="false"/>
 		</GridPane>
 	 </Tab>
 	 <Tab text="%Connect.Tab2.Header">
@@ -61,6 +62,6 @@
 		</VBox>
 	 </Tab>
 	</TabPane>
-	<Button  GridPane.columnIndex="0" GridPane.rowIndex="1" text="%Connect.Dataentity.Generate" onAction="#onGenerateDataEntity"/>
+	<Button  GridPane.columnIndex="0" GridPane.rowIndex="1" text="%Connect.Dataentity.Generate" onAction="#onGenerateDataEntityClicked"/>
 </GridPane>
 
