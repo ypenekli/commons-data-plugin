@@ -27,7 +27,13 @@ import org.eclipse.datatools.connectivity.IManagedConnection;
 import org.eclipse.datatools.connectivity.ProfileManager;
 import org.eclipse.fx.ui.workbench3.FXViewPart;
 import org.eclipse.jdt.core.IPackageFragment;
+import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.search.SearchEngine;
+import org.eclipse.jdt.ui.IJavaElementSearchConstants;
+import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jdt.ui.actions.BuildActionGroup;
+import org.eclipse.jface.dialogs.IDialogConstants;
+import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Shell;
@@ -38,6 +44,7 @@ import org.eclipse.ui.IWorkbenchSite;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.dialogs.CheckedTreeSelectionDialog;
+import org.eclipse.ui.dialogs.SelectionDialog;
 import org.eclipse.ui.ide.IDE;
 
 import com.yp.core.data.plugin.model.Column;
@@ -86,6 +93,8 @@ public class Connect extends FXViewPart implements Initializable {
 	private TextField txtUserPassw;
 	@FXML
 	private Label txtPackageName;
+
+	private IWorkbenchSite parentSite;
 
 	private Connection connection;
 	private Renderer renderer;
@@ -283,6 +292,20 @@ public class Connect extends FXViewPart implements Initializable {
 		} catch (PartInitException e) {
 			logger.log(Level.SEVERE, e.getMessage());
 		}
+		
+
+
+//		try {
+//			if (connection != null && !connection.isClosed())
+//				connection.close();
+//		} catch (SQLException e) {
+//			logger.log(Level.SEVERE, e.getMessage());
+//		}
+//		if (sellectedProfile != null) {
+//			sellectedProfile.disconnect();
+//			sellectedProfile = null;
+//		}
+		//site.getPage().close();
 	}
 
 	private void generatColumnList() {
@@ -425,11 +448,19 @@ public class Connect extends FXViewPart implements Initializable {
 	@FXML
 	public void onBrowseClicked(final ActionEvent arg0) {
 		Shell shell = site.getShell();
-		CheckedTreeSelectionDialog dialog = new CheckedTreeSelectionDialog(shell, new LabelProvider(), null);		
-		dialog.setTitle("Which operating system are you using");
-		// user pressed cancel
-		if (dialog.open() == Window.OK) {
-			//Object[] result = dialog.getResult();
+
+		SelectionDialog dialog;
+		try {
+			dialog = JavaUI.createPackageDialog(shell, packagee.getJavaProject(),
+					IJavaElementSearchConstants.CONSIDER_ALL_TYPES);
+
+			dialog.setTitle("My Dialog Title");
+			dialog.setMessage("My Dialog Message");
+			if (dialog.open() == IDialogConstants.OK_ID) {
+				Object[] types = dialog.getResult();
+			}
+		} catch (JavaModelException e) {
+			logger.log(Level.SEVERE, e.getMessage());
 		}
 
 	}
