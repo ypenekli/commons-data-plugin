@@ -1,7 +1,6 @@
 package com.yp.core.data.plugin.views;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -10,10 +9,12 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,26 +26,17 @@ import org.eclipse.core.runtime.Path;
 import org.eclipse.datatools.connectivity.IConnectionProfile;
 import org.eclipse.datatools.connectivity.IManagedConnection;
 import org.eclipse.datatools.connectivity.ProfileManager;
-import org.eclipse.fx.ui.workbench3.FXViewPart;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.search.SearchEngine;
-import org.eclipse.jdt.ui.IJavaElementSearchConstants;
-import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jdt.ui.actions.BuildActionGroup;
-import org.eclipse.jface.dialogs.IDialogConstants;
-import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.jface.viewers.LabelProvider;
-import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchSite;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
-import org.eclipse.ui.dialogs.CheckedTreeSelectionDialog;
-import org.eclipse.ui.dialogs.SelectionDialog;
+import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 import org.eclipse.ui.ide.IDE;
 
 import com.yp.core.data.plugin.model.Column;
@@ -53,26 +45,18 @@ import com.yp.core.data.plugin.model.Renderer;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Pane;
 
-public class Connect extends FXViewPart implements Initializable {
+public class Connect implements Initializable {
 
 	@Inject
 	Logger logger;
-	@Inject
-	IWorkbench workBench;
-	@Inject
-	IWorkbenchSite site;
+	private IWorkbenchSite site;
 
-	public static final String VIEW_ID = "com.yp.core.data.plugin.views.Connect";
 	public static final String PACKAGE_ID = "org.eclipse.jdt.ui.PackageExplorer";
 	private static final String USERNAME = "org.eclipse.datatools.connectivity.db.username";
 	private static final String USERPASSW = "org.eclipse.datatools.connectivity.db.password";
@@ -94,9 +78,7 @@ public class Connect extends FXViewPart implements Initializable {
 	@FXML
 	private Label txtPackageName;
 
-	private IWorkbenchSite parentSite;
-
-	private Connection connection;
+	private Connection myConnection;
 	private Renderer renderer;
 	private Map<String, Column> keys;
 	private Map<String, Column> columns;
@@ -105,32 +87,8 @@ public class Connect extends FXViewPart implements Initializable {
 	private BuildActionGroup actionGruop;
 	private IWorkbenchWindow workBenchWindow;
 
-	@Override
-	protected Scene createFxScene() {
-		FXMLLoader loader = new FXMLLoader(getClass().getResource("Connect.fxml"),
-				ResourceBundle.getBundle("Messages"));
-		Pane pane;
-		try {
-			pane = loader.load();
-			Connect connect = (Connect) loader.getController();
-			connect.setPackagee((IPackageFragment) getSite().getShell().getData("package"));
-			connect.workBenchWindow = getSite().getWorkbenchWindow();
-			IWorkbenchPart part = (IWorkbenchPart) getSite().getShell().getData("part");
-			if (part != null)
-				connect.actionGruop = new BuildActionGroup(part.getSite(), null);
-
-			return new Scene(pane);
-		} catch (IOException e) {
-			logger.log(Level.SEVERE, e.getMessage());
-		}
-
-		return new Scene(new BorderPane());
-	}
-
-	@Override
 	protected void setFxFocus() {
-		if (cmbConnProfile != null)
-			cmbConnProfile.requestFocus();
+		cmbConnProfile.requestFocus();
 	}
 
 	@Override
@@ -161,8 +119,8 @@ public class Connect extends FXViewPart implements Initializable {
 
 	private void buildConnection() {
 		try {
-			if (connection != null && !connection.isClosed())
-				connection.close();
+			if (myConnection != null && !myConnection.isClosed())
+				myConnection.close();
 
 			if (sellectedProfile != null) {
 				Properties p = sellectedProfile.getBaseProperties();
@@ -175,7 +133,7 @@ public class Connect extends FXViewPart implements Initializable {
 				sellectedProfile.connect();
 				IManagedConnection mc = sellectedProfile.getManagedConnection(CONNECTION);
 				if (mc != null)
-					connection = (Connection) mc.getConnection().getRawConnection();
+					myConnection = (Connection) mc.getConnection().getRawConnection();
 			}
 		} catch (SQLException e) {
 			logger.log(Level.SEVERE, e.getMessage());
@@ -203,8 +161,8 @@ public class Connect extends FXViewPart implements Initializable {
 
 	private void fillSchemaNames() {
 		try {
-			if (connection != null) {
-				fillSchemaNames(connection.getMetaData());
+			if (myConnection != null) {
+				fillSchemaNames(myConnection.getMetaData());
 			}
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, e.getMessage());
@@ -235,9 +193,9 @@ public class Connect extends FXViewPart implements Initializable {
 	}
 
 	private void fillTableNames(String pSchemaName) {
-		if (connection != null) {
+		if (myConnection != null) {
 			try {
-				fillTableNames(pSchemaName, connection.getMetaData());
+				fillTableNames(pSchemaName, myConnection.getMetaData());
 			} catch (Exception e) {
 				logger.log(Level.SEVERE, e.getMessage());
 			}
@@ -292,20 +250,17 @@ public class Connect extends FXViewPart implements Initializable {
 		} catch (PartInitException e) {
 			logger.log(Level.SEVERE, e.getMessage());
 		}
-		
 
-
-//		try {
-//			if (connection != null && !connection.isClosed())
-//				connection.close();
-//		} catch (SQLException e) {
-//			logger.log(Level.SEVERE, e.getMessage());
-//		}
-//		if (sellectedProfile != null) {
-//			sellectedProfile.disconnect();
-//			sellectedProfile = null;
-//		}
-		//site.getPage().close();
+		try {
+			if (myConnection != null && !myConnection.isClosed())
+				myConnection.close();
+		} catch (SQLException e) {
+			logger.log(Level.SEVERE, e.getMessage());
+		}
+		if (sellectedProfile != null) {
+			sellectedProfile.disconnect();
+			sellectedProfile = null;
+		}
 	}
 
 	private void generatColumnList() {
@@ -313,7 +268,7 @@ public class Connect extends FXViewPart implements Initializable {
 		if (Column.isNull(query) || query.length() < 10)
 			query = "select * from " + renderer.getTableFullName();
 
-		try (java.sql.PreparedStatement ps = connection.prepareStatement(query);) {
+		try (java.sql.PreparedStatement ps = myConnection.prepareStatement(query);) {
 			ResultSetMetaData resMeta = ps.getMetaData();
 			generateColumnList(resMeta);
 			renderer.setColumnList(columnList);
@@ -324,8 +279,8 @@ public class Connect extends FXViewPart implements Initializable {
 
 	private void prepareRenderer() {
 		try {
-			if (connection != null) {
-				DatabaseMetaData connMeta = connection.getMetaData();
+			if (myConnection != null) {
+				DatabaseMetaData connMeta = myConnection.getMetaData();
 				renderer.setDriverName(connMeta.getDriverName());
 				generateKeys(connMeta);
 				generateColumnNames(connMeta);
@@ -335,8 +290,8 @@ public class Connect extends FXViewPart implements Initializable {
 			logger.log(Level.SEVERE, e.getMessage());
 		} finally {
 			try {
-				if (connection != null && !connection.isClosed())
-					connection.close();
+				if (myConnection != null && !myConnection.isClosed())
+					myConnection.close();
 			} catch (SQLException e) {
 				logger.log(Level.SEVERE, e.getMessage());
 			}
@@ -439,29 +394,60 @@ public class Connect extends FXViewPart implements Initializable {
 		return packagee;
 	}
 
-	public void setPackagee(IPackageFragment pPackagee) {
-		packagee = pPackagee;
+	public void setSite(IWorkbenchSite pSite) {
+		site = pSite;
+		workBenchWindow = site.getWorkbenchWindow();
+		actionGruop = new BuildActionGroup(site, null);
+		packagee = (IPackageFragment) site.getShell().getData("package");
+
 		if (packagee != null)
 			txtPackageName.setText(packagee.getElementName());
 	}
 
 	@FXML
 	public void onBrowseClicked(final ActionEvent arg0) {
-		Shell shell = site.getShell();
+		Shell shell = this.site.getShell();
 
-		SelectionDialog dialog;
+		ElementListSelectionDialog dialog = new ElementListSelectionDialog(shell, new LabelProvider());
+
+		dialog.setTitle("My Dialog Title");
+		dialog.setMessage("My Dialog Message");
 		try {
-			dialog = JavaUI.createPackageDialog(shell, packagee.getJavaProject(),
-					IJavaElementSearchConstants.CONSIDER_ALL_TYPES);
-
-			dialog.setTitle("My Dialog Title");
-			dialog.setMessage("My Dialog Message");
-			if (dialog.open() == IDialogConstants.OK_ID) {
-				Object[] types = dialog.getResult();
-			}
-		} catch (JavaModelException e) {
-			logger.log(Level.SEVERE, e.getMessage());
+			Set<String> pack = new HashSet<>();			
+			listOfPackage2(packagee.getJavaProject().getChildren(), pack);
+			dialog.setElements(pack.toArray());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		if (dialog.open() == ElementListSelectionDialog.OK) {
+			Object[] types = dialog.getResult();
 		}
 
+	}
+
+	public static void listOfPackage2(IJavaElement[] list, Set<String> pack) {
+		for (IJavaElement je : list) {
+			System.out.println(je.getElementName());
+			if(je.getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
+				pack.add(je.getElementName());
+			}
+		}
+	}
+
+	public static void listOfPackage(File directory, Set<String> pack) {
+		// File directory = new File(directoryName);
+
+		// get all the files from a directory
+		File[] fList = directory.listFiles();
+		for (File file : fList) {
+			if (file.isFile()) {
+				String path = file.getPath();
+				String packName = path.substring(path.indexOf("src") + 4, path.lastIndexOf('\\'));
+				pack.add(packName.replace('\\', '.'));
+			} else if (file.isDirectory()) {
+				listOfPackage(file, pack);
+				// listOfPackage(file.getAbsolutePath(), pack);
+			}
+		}
 	}
 }

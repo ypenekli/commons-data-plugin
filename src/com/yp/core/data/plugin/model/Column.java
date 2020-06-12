@@ -12,11 +12,11 @@ public class Column {
 
 	public Column(String pColumnName, String pColumnType, boolean pIsAutoIncrement) {
 		super();
+		isReadonly = false;
+		isDate = false;
 		setColumnName(pColumnName);
 		setColumnTypeFullName(pColumnType);
 		isAutoIncrement = pIsAutoIncrement;
-		isReadonly = false;
-		isDate = false;
 	}
 
 	public String getColumnName() {
@@ -37,7 +37,7 @@ public class Column {
 			columnName = pColumnName.toLowerCase(LOCALE_EN);
 			fieldName = pColumnName.toUpperCase(LOCALE_EN);
 			functionName = ucaseFirsChar(pColumnName);
-			isDate = columnName.endsWith(DATE) || columnName.endsWith(DATETIME);
+			isDate = columnName.endsWith(DATE) || columnName.endsWith(DATETIME);			
 		}
 	}
 

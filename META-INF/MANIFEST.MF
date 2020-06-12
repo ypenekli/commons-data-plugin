@@ -22,6 +22,11 @@ Automatic-Module-Name: commons-data-plugin
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8,
  JavaSE-1.7
-Export-Package: com.yp.core.data.plugin,
- com.yp.core.data.plugin.handlers,
- com.yp.core.data.plugin.views
+Export-Package: com.yp.core.data.plugin;uses:="org.osgi.framework,org.eclipse.ui.plugin",
+ com.yp.core.data.plugin.handlers;uses:="org.eclipse.core.commands",
+ com.yp.core.data.plugin.views;
+  uses:="org.eclipse.jdt.core,
+   org.eclipse.fx.ui.workbench3,
+   javafx.scene,
+   javafx.event,
+   javafx.fxml"

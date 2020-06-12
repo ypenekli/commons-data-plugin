@@ -7,14 +7,14 @@
             id="com.yp.core.data.plugin.views.Connect"
             name="%Connect.View.Name"
             icon="icons/sample.gif"
-            class="com.yp.core.data.plugin.views.Connect">
+            class="com.yp.core.data.plugin.views.ConnectView">
       </view>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
       <handler
             class="com.yp.core.data.plugin.handlers.ConnectionHandler"
-            commandId="commons-data-plugin.commands.ConnectCommand">
+            commandId="commons-data-plugin.handlers.ConnectionHandler">
       </handler>
    </extension>
    <extension
@@ -22,11 +22,20 @@
       <menuContribution
             locationURI="popup:org.eclipse.jdt.ui.PackageExplorer?endof=group.edit">         
             <command
-                  commandId="commons-data-plugin.commands.ConnectCommand"
-                  icon="icons/sample.png"
-                  id="commons-data-plugin.toolbars.sampleCommand"
+            	  id="commons-data-plugin.menu.connectionMenu"
+                  commandId="commons-data-plugin.handlers.ConnectionHandler"
+                  icon="icons/sample.png"                  
                   tooltip="%Connect.View.Name" label="%Connect.View.Name" style="push">
             </command>        
-      </menuContribution>  
+      </menuContribution>
+      <menuContribution
+            locationURI="popup:org.eclipse.ui.navigator.ProjectExplorer#PopupMenu?endof=group.edit">         
+            <command
+            	  id="commons-data-plugin.menu.connectionMenu"
+                  commandId="commons-data-plugin.handlers.ConnectionHandler"
+                  icon="icons/sample.png"                  
+                  tooltip="%Connect.View.Name" label="%Connect.View.Name" style="push">
+            </command>        
+      </menuContribution>
    </extension>
 </plugin>

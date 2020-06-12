@@ -8,22 +8,18 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import javax.inject.Inject;
-
 import org.eclipse.jdt.core.IPackageFragment;
 
 public class Renderer {
 
-	@Inject
-	Logger logger;
+//	@Inject
+//	Logger logger;
 
 	private String connProfile, schemaName, tableName, tableFullName, userName, userPassw, driverName;
 	private String schemaSeperator = ".";
@@ -215,7 +211,8 @@ public class Renderer {
 			writer.write("}");
 			writer.flush();
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, e.getMessage());
+			// logger.log(Level.SEVERE, e.getMessage());
+			e.printStackTrace();
 		}
 	}
 
@@ -227,7 +224,8 @@ public class Renderer {
 			file = path + "/" + className + ".java";
 			render(file, pu.getElementName(), className);
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, e.getMessage());
+			// logger.log(Level.SEVERE, e.getMessage());
+			e.printStackTrace();
 		}
 		return file;
 	}
@@ -262,9 +260,9 @@ public class Renderer {
 			}
 		}
 		pWriter.write("	}");
-		
-		pWriter.write(EOL_DOUBLE);		
-		
+
+		pWriter.write(EOL_DOUBLE);
+
 		if (!keyList.isEmpty()) {
 			String comma = "";
 			pWriter.write("	public " + className + "(");
@@ -299,10 +297,9 @@ public class Renderer {
 		pWriter.write(EOL_DOUBLE);
 	}
 
-	private static String[] functions = new String[] { 
-			getFileResource("function1.txt"),//i=0 writable
-			getFileResource("function2.txt"), //i=1 readonly
-			getFileResource("function3.txt"), //i=2 date
+	private static String[] functions = new String[] { getFileResource("function1.txt"), // i=0 writable
+			getFileResource("function2.txt"), // i=1 readonly
+			getFileResource("function3.txt"), // i=2 date
 			getFileResource("function4.txt") }; // i= 3 datetime
 
 	private static String getFileResource(String pFileName) {

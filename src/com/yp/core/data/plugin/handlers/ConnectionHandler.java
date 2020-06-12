@@ -18,25 +18,26 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.handlers.HandlerUtil;
 
 import com.yp.core.data.plugin.views.Connect;
+import com.yp.core.data.plugin.views.ConnectView;
 
 public class ConnectionHandler extends AbstractHandler {
 
 	@Inject
 	Logger logger;
-	
+
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		IWorkbenchWindow window = HandlerUtil.getActiveWorkbenchWindowChecked(event);
-		IWorkbenchPart parentPart =  HandlerUtil.getActivePartChecked(event);
+		IWorkbenchPart parentPart = window.getActivePage().getActivePart();
 		try {
 			window.getShell().setData("part", parentPart);
 			IPackageFragment packagee = getPackage(event);
 			if (packagee != null) {
 				window.getShell().setData("package", packagee);
-				IViewPart part =  window.getActivePage().showView(Connect.VIEW_ID);
+				IViewPart part = window.getActivePage().showView(ConnectView.VIEW_ID);
 				window.getActivePage().hideView(part);
-				window.getActivePage().showView(Connect.VIEW_ID);
-				
+				window.getActivePage().showView(ConnectView.VIEW_ID);
+
 			}
 		} catch (PartInitException e) {
 			logger.log(Level.SEVERE, e.getMessage());
@@ -49,8 +50,9 @@ public class ConnectionHandler extends AbstractHandler {
 		if (select != null) {
 			IStructuredSelection sel = (IStructuredSelection) select;
 			Object firstElement = sel.getFirstElement();
-			if (firstElement instanceof IPackageFragment)
+			if (firstElement instanceof IPackageFragment) {				
 				return ((IPackageFragment) firstElement);
+			}
 		}
 		return null;
 	}
