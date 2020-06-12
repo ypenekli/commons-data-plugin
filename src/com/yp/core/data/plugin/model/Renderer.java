@@ -24,7 +24,7 @@ public class Renderer {
 	private String connProfile, schemaName, tableName, tableFullName, userName, userPassw, driverName;
 	private String schemaSeperator = ".";
 
-	private boolean isSuccess, isMicrosoftSql;
+	private boolean isReady, isMicrosoftSql;
 	private List<Column> columnList, keyList;
 	private List<String> importList;
 	public static final Map<String, String> USER_COLUMNS = Stream
@@ -36,7 +36,7 @@ public class Renderer {
 
 	public Renderer(boolean pSuccess) {
 		super();
-		isSuccess = pSuccess;
+		isReady = pSuccess;
 		columnList = new ArrayList<>();
 		importList = new ArrayList<>();
 		keyList = new ArrayList<>();
@@ -123,12 +123,12 @@ public class Renderer {
 		schemaSeperator = pSchemaSeperator;
 	}
 
-	public boolean isSuccess() {
-		return isSuccess;
+	public boolean isReady() {
+		return isReady;
 	}
 
-	public void setSuccess(boolean pIsSuccess) {
-		isSuccess = pIsSuccess;
+	public void setReady(boolean pReady) {
+		isReady = pReady;
 	}
 
 	public boolean isMicrosoftSql() {

@@ -28,7 +28,6 @@ import org.eclipse.datatools.connectivity.IManagedConnection;
 import org.eclipse.datatools.connectivity.ProfileManager;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IPackageFragment;
-import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.ui.actions.BuildActionGroup;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.widgets.Shell;
@@ -118,25 +117,18 @@ public class Connect implements Initializable {
 	}
 
 	private void buildConnection() {
-		try {
-			if (myConnection != null && !myConnection.isClosed())
-				myConnection.close();
-
-			if (sellectedProfile != null) {
-				Properties p = sellectedProfile.getBaseProperties();
-				if (!Column.isNull(txtUserName.getText())) {
-					p.put(USERNAME, txtUserName.getText());
-					p.put(USERPASSW, txtUserPassw.getText());
-					p.put(SAVEPASSW, "true");
-				}
-				sellectedProfile.setBaseProperties(p);
-				sellectedProfile.connect();
-				IManagedConnection mc = sellectedProfile.getManagedConnection(CONNECTION);
-				if (mc != null)
-					myConnection = (Connection) mc.getConnection().getRawConnection();
+		if (getSellectedProfile() != null) {
+			Properties p = sellectedProfile.getBaseProperties();
+			if (!Column.isNull(txtUserName.getText())) {
+				p.put(USERNAME, txtUserName.getText());
+				p.put(USERPASSW, txtUserPassw.getText());
+				p.put(SAVEPASSW, "true");
 			}
-		} catch (SQLException e) {
-			logger.log(Level.SEVERE, e.getMessage());
+			sellectedProfile.setBaseProperties(p);
+			sellectedProfile.connect();
+			IManagedConnection mc = sellectedProfile.getManagedConnection(CONNECTION);
+			if (mc != null)
+				myConnection = (Connection) mc.getConnection().getRawConnection();
 		}
 	}
 
@@ -205,22 +197,34 @@ public class Connect implements Initializable {
 
 	@FXML
 	public void onConnProfileChanged(ActionEvent event) {
+		try {
+			if (myConnection != null && !myConnection.isClosed())
+				myConnection.close();
+		} catch (SQLException e) {
+			logger.log(Level.SEVERE, e.getMessage());
+		}
 		if (sellectedProfile != null) {
 			sellectedProfile.disconnect();
 			sellectedProfile = null;
 		}
-		int i = cmbConnProfile.getSelectionModel().getSelectedIndex();
-		if (i > -1) {
-			sellectedProfile = profiles[cmbConnProfile.getSelectionModel().getSelectedIndex()];
-			Properties p = sellectedProfile.getBaseProperties();
-			txtUserName.setText(p.getProperty(USERNAME));
-			txtUserPassw.setText(p.getProperty(USERPASSW));
+		getSellectedProfile();
+	}
+
+	private IConnectionProfile getSellectedProfile() {
+		if (sellectedProfile == null) {
+			int i = cmbConnProfile.getSelectionModel().getSelectedIndex();
+			if (i > -1) {
+				sellectedProfile = profiles[cmbConnProfile.getSelectionModel().getSelectedIndex()];
+				Properties p = sellectedProfile.getBaseProperties();
+				txtUserName.setText(p.getProperty(USERNAME));
+				txtUserPassw.setText(p.getProperty(USERPASSW));
+			}
 		}
+		return sellectedProfile;
 	}
 
 	@FXML
 	public void onSchemasChanged(ActionEvent event) {
-		renderer.setSchemaName(cmbSchemas.getSelectionModel().getSelectedItem());
 		fillTableNames(cmbSchemas.getSelectionModel().getSelectedItem());
 	}
 
@@ -237,18 +241,21 @@ public class Connect implements Initializable {
 
 	@FXML
 	public void onGenerateDataEntityClicked(final ActionEvent arg0) {
+		buildConnection();
 		prepareRenderer();
+		if (renderer.isReady()) {
+			String file = renderer.render(packagee);
+			actionGruop.getRefreshAction().run();
 
-		String file = renderer.render(packagee);
-		actionGruop.getRefreshAction().run();
-
-		File f = new File(file);
-		IPath ipath = new Path(f.getAbsolutePath());
-		IWorkbenchPage page = workBenchWindow.getActivePage();
-		try {
-			IDE.openEditorOnFileStore(page, EFS.getLocalFileSystem().getStore(ipath));
-		} catch (PartInitException e) {
-			logger.log(Level.SEVERE, e.getMessage());
+			File f = new File(file);
+			IPath ipath = new Path(f.getAbsolutePath());
+			IWorkbenchPage page = workBenchWindow.getActivePage();
+			try {
+				IDE.openEditorOnFileStore(page, EFS.getLocalFileSystem().getStore(ipath));
+			} catch (PartInitException e) {
+				logger.log(Level.SEVERE, e.getMessage());
+			}
+			renderer = new Renderer(false);
 		}
 
 		try {
@@ -280,11 +287,14 @@ public class Connect implements Initializable {
 	private void prepareRenderer() {
 		try {
 			if (myConnection != null) {
+				renderer.setSchemaName(cmbSchemas.getSelectionModel().getSelectedItem());
+				renderer.setTableName(cmbTables.getSelectionModel().getSelectedItem());
 				DatabaseMetaData connMeta = myConnection.getMetaData();
 				renderer.setDriverName(connMeta.getDriverName());
 				generateKeys(connMeta);
 				generateColumnNames(connMeta);
 				generatColumnList();
+				renderer.setReady(true);
 			}
 		} catch (SQLException e) {
 			logger.log(Level.SEVERE, e.getMessage());
@@ -413,7 +423,7 @@ public class Connect implements Initializable {
 		dialog.setTitle("My Dialog Title");
 		dialog.setMessage("My Dialog Message");
 		try {
-			Set<String> pack = new HashSet<>();			
+			Set<String> pack = new HashSet<>();
 			listOfPackage2(packagee.getJavaProject().getChildren(), pack);
 			dialog.setElements(pack.toArray());
 		} catch (Exception e) {
@@ -425,13 +435,26 @@ public class Connect implements Initializable {
 
 	}
 
-	public static void listOfPackage2(IJavaElement[] list, Set<String> pack) {
+//	 public class q {
+//	        public static void main(String args[]) {
+//	            Package[] pack = Package.getPackages();
+//
+//	          // print all packages, one by one
+//	            for (int i = 0; i < pack.length; i++) {
+//	                String a = pack[i].toString()  ;
+//	                System.out.println(a.replaceAll("package ", ""));
+//	            }
+//	        }
+//	    }
+	 
+	public static void listOfPackage2(IJavaElement[] list, Set<String> pack) {		
 		for (IJavaElement je : list) {
 			System.out.println(je.getElementName());
-			if(je.getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
+			if (je.getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
 				pack.add(je.getElementName());
 			}
 		}
+		
 	}
 
 	public static void listOfPackage(File directory, Set<String> pack) {
