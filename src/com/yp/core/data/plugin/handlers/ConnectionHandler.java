@@ -1,10 +1,5 @@
 package com.yp.core.data.plugin.handlers;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.inject.Inject;
-
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
@@ -17,13 +12,9 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.handlers.HandlerUtil;
 
-import com.yp.core.data.plugin.views.Connect;
 import com.yp.core.data.plugin.views.ConnectView;
 
 public class ConnectionHandler extends AbstractHandler {
-
-	@Inject
-	Logger logger;
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
@@ -40,7 +31,7 @@ public class ConnectionHandler extends AbstractHandler {
 
 			}
 		} catch (PartInitException e) {
-			logger.log(Level.SEVERE, e.getMessage());
+			e.printStackTrace();
 		}
 		return null;
 	}
@@ -50,7 +41,7 @@ public class ConnectionHandler extends AbstractHandler {
 		if (select != null) {
 			IStructuredSelection sel = (IStructuredSelection) select;
 			Object firstElement = sel.getFirstElement();
-			if (firstElement instanceof IPackageFragment) {				
+			if (firstElement instanceof IPackageFragment) {
 				return ((IPackageFragment) firstElement);
 			}
 		}

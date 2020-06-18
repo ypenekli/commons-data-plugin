@@ -9,16 +9,10 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.inject.Inject;
 
 import org.eclipse.core.filesystem.EFS;
 import org.eclipse.core.runtime.IPath;
@@ -26,35 +20,33 @@ import org.eclipse.core.runtime.Path;
 import org.eclipse.datatools.connectivity.IConnectionProfile;
 import org.eclipse.datatools.connectivity.IManagedConnection;
 import org.eclipse.datatools.connectivity.ProfileManager;
-import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.ui.actions.BuildActionGroup;
-import org.eclipse.jface.viewers.LabelProvider;
-import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchSite;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
-import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 import org.eclipse.ui.ide.IDE;
 
 import com.yp.core.data.plugin.model.Column;
 import com.yp.core.data.plugin.model.Renderer;
 
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 
 public class Connect implements Initializable {
-
-	@Inject
-	Logger logger;
-	private IWorkbenchSite site;
 
 	public static final String PACKAGE_ID = "org.eclipse.jdt.ui.PackageExplorer";
 	private static final String USERNAME = "org.eclipse.datatools.connectivity.db.username";
@@ -67,8 +59,6 @@ public class Connect implements Initializable {
 	@FXML
 	private ComboBox<String> cmbSchemas;
 	@FXML
-	private ComboBox<String> cmbTables;
-	@FXML
 	private TextArea txtQuery;
 	@FXML
 	private TextField txtUserName;
@@ -76,6 +66,10 @@ public class Connect implements Initializable {
 	private TextField txtUserPassw;
 	@FXML
 	private Label txtPackageName;
+	@FXML
+	private ListView<String> listTables;
+	@FXML
+	private TabPane tabsDb;
 
 	private Connection myConnection;
 	private Renderer renderer;
@@ -85,6 +79,7 @@ public class Connect implements Initializable {
 	private IPackageFragment packagee;
 	private BuildActionGroup actionGruop;
 	private IWorkbenchWindow workBenchWindow;
+	private IWorkbenchSite site;
 
 	protected void setFxFocus() {
 		cmbConnProfile.requestFocus();
@@ -97,6 +92,12 @@ public class Connect implements Initializable {
 		keys = new HashMap<>();
 		columns = new HashMap<>();
 		columnList = new ArrayList<>();
+		listTables.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+		final MenuItem sevkMenuItem = new MenuItem(
+				ResourceBundle.getBundle("Messages").getString("Connect.Dataentity.Generate"));
+		sevkMenuItem.setOnAction(event -> onGenerateDataEntityClicked(null));
+		final ContextMenu contextMenu = new ContextMenu(sevkMenuItem);
+		listTables.setContextMenu(contextMenu);
 	}
 
 	private IConnectionProfile[] profiles;
@@ -147,7 +148,7 @@ public class Connect implements Initializable {
 			}
 			cmbSchemas.setItems(FXCollections.observableArrayList(schemaList));
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, e.getMessage());
+			e.printStackTrace();
 		}
 	}
 
@@ -157,7 +158,7 @@ public class Connect implements Initializable {
 				fillSchemaNames(myConnection.getMetaData());
 			}
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, e.getMessage());
+			e.printStackTrace();
 		}
 
 	}
@@ -178,9 +179,9 @@ public class Connect implements Initializable {
 			while (res.next()) {
 				tableList.add(res.getString("TABLE_NAME"));
 			}
-			cmbTables.setItems(FXCollections.observableArrayList(tableList));
+			listTables.setItems(FXCollections.observableArrayList(tableList));
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, e.getMessage());
+			e.printStackTrace();
 		}
 	}
 
@@ -189,7 +190,7 @@ public class Connect implements Initializable {
 			try {
 				fillTableNames(pSchemaName, myConnection.getMetaData());
 			} catch (Exception e) {
-				logger.log(Level.SEVERE, e.getMessage());
+				e.printStackTrace();
 			}
 		}
 
@@ -201,7 +202,7 @@ public class Connect implements Initializable {
 			if (myConnection != null && !myConnection.isClosed())
 				myConnection.close();
 		} catch (SQLException e) {
-			logger.log(Level.SEVERE, e.getMessage());
+			e.printStackTrace();
 		}
 		if (sellectedProfile != null) {
 			sellectedProfile.disconnect();
@@ -229,41 +230,44 @@ public class Connect implements Initializable {
 	}
 
 	@FXML
-	public void onTablesChanged(ActionEvent event) {
-		renderer.setTableName(cmbTables.getSelectionModel().getSelectedItem());
-	}
-
-	@FXML
 	public void onConnectDbClicked(final ActionEvent arg0) {
 		buildConnection();
 		fillSchemaNames();
+		tabsDb.getSelectionModel().clearAndSelect(1);
 	}
 
 	@FXML
 	public void onGenerateDataEntityClicked(final ActionEvent arg0) {
 		buildConnection();
-		prepareRenderer();
-		if (renderer.isReady()) {
-			String file = renderer.render(packagee);
-			actionGruop.getRefreshAction().run();
-
-			File f = new File(file);
-			IPath ipath = new Path(f.getAbsolutePath());
-			IWorkbenchPage page = workBenchWindow.getActivePage();
+		ObservableList<String> tables = listTables.getSelectionModel().getSelectedItems();
+		if (tables != null && !tables.isEmpty()) {
+			String schemaName = cmbSchemas.getSelectionModel().getSelectedItem();
 			try {
-				IDE.openEditorOnFileStore(page, EFS.getLocalFileSystem().getStore(ipath));
-			} catch (PartInitException e) {
-				logger.log(Level.SEVERE, e.getMessage());
+				for (String table : tables) {
+					renderer = new Renderer(schemaName, table);
+					prepareRenderer();
+					if (renderer.isReady()) {
+						String file = renderer.render(packagee);
+						actionGruop.getRefreshAction().run();
+
+						File f = new File(file);
+						IPath ipath = new Path(f.getAbsolutePath());
+						IWorkbenchPage page = workBenchWindow.getActivePage();
+						IDE.openEditorOnFileStore(page, EFS.getLocalFileSystem().getStore(ipath));
+					}
+				}
+			} catch (SQLException | PartInitException e) {
+				e.printStackTrace();
+			} finally {
+				try {
+					if (myConnection != null && !myConnection.isClosed())
+						myConnection.close();
+				} catch (Exception e2) {
+					e2.printStackTrace();
+				}
 			}
-			renderer = new Renderer(false);
 		}
 
-		try {
-			if (myConnection != null && !myConnection.isClosed())
-				myConnection.close();
-		} catch (SQLException e) {
-			logger.log(Level.SEVERE, e.getMessage());
-		}
 		if (sellectedProfile != null) {
 			sellectedProfile.disconnect();
 			sellectedProfile = null;
@@ -280,31 +284,18 @@ public class Connect implements Initializable {
 			generateColumnList(resMeta);
 			renderer.setColumnList(columnList);
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, e.getMessage());
+			e.printStackTrace();
 		}
 	}
 
-	private void prepareRenderer() {
-		try {
-			if (myConnection != null) {
-				renderer.setSchemaName(cmbSchemas.getSelectionModel().getSelectedItem());
-				renderer.setTableName(cmbTables.getSelectionModel().getSelectedItem());
-				DatabaseMetaData connMeta = myConnection.getMetaData();
-				renderer.setDriverName(connMeta.getDriverName());
-				generateKeys(connMeta);
-				generateColumnNames(connMeta);
-				generatColumnList();
-				renderer.setReady(true);
-			}
-		} catch (SQLException e) {
-			logger.log(Level.SEVERE, e.getMessage());
-		} finally {
-			try {
-				if (myConnection != null && !myConnection.isClosed())
-					myConnection.close();
-			} catch (SQLException e) {
-				logger.log(Level.SEVERE, e.getMessage());
-			}
+	private void prepareRenderer() throws SQLException {
+		if (myConnection != null) {
+			DatabaseMetaData connMeta = myConnection.getMetaData();
+			renderer.setDriverName(connMeta.getDriverName());
+			generateKeys(connMeta);
+			generateColumnNames(connMeta);
+			generatColumnList();
+			renderer.setReady(true);
 		}
 	}
 
@@ -325,7 +316,7 @@ public class Connect implements Initializable {
 				keys.put(col.getColumnName(), col);
 			}
 		} catch (SQLException e) {
-			logger.log(Level.SEVERE, e.getMessage());
+			e.printStackTrace();
 		}
 
 	}
@@ -348,7 +339,7 @@ public class Connect implements Initializable {
 					columns.put(col.getColumnName(), col);
 			}
 		} catch (SQLException e) {
-			logger.log(Level.SEVERE, e.getMessage());
+			e.printStackTrace();
 		}
 
 	}
@@ -373,30 +364,7 @@ public class Connect implements Initializable {
 				}
 			}
 		} catch (SQLException e) {
-			logger.log(Level.SEVERE, e.getMessage());
-		}
-	}
-
-	protected void printMedaData(DatabaseMetaData pM) throws SQLException {
-		System.out.println("pM.getCatalogSeparator()" + pM.getCatalogSeparator());
-		System.out.println("pM.getDriverName()" + pM.getDriverName());
-		System.out.println("pM.getDriverVersion()" + pM.getDriverVersion());
-		System.out.println("pM.getSchemaTerm()" + pM.getSchemaTerm());
-
-		try (ResultSet rs = pM.getSchemas();) {
-			while (rs.next()) {
-				System.out.println("pM.getSchemaName()" + rs.getString(1));
-			}
-		} catch (Exception e) {
-			logger.log(Level.SEVERE, e.getMessage());
-		}
-
-		try (ResultSet rs = pM.getCatalogs();) {
-			while (rs.next()) {
-				System.out.println("pM.getCatalogs()" + rs.getString(1));
-			}
-		} catch (Exception e) {
-			logger.log(Level.SEVERE, e.getMessage());
+			e.printStackTrace();
 		}
 	}
 
@@ -412,65 +380,5 @@ public class Connect implements Initializable {
 
 		if (packagee != null)
 			txtPackageName.setText(packagee.getElementName());
-	}
-
-	@FXML
-	public void onBrowseClicked(final ActionEvent arg0) {
-		Shell shell = this.site.getShell();
-
-		ElementListSelectionDialog dialog = new ElementListSelectionDialog(shell, new LabelProvider());
-
-		dialog.setTitle("My Dialog Title");
-		dialog.setMessage("My Dialog Message");
-		try {
-			Set<String> pack = new HashSet<>();
-			listOfPackage2(packagee.getJavaProject().getChildren(), pack);
-			dialog.setElements(pack.toArray());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		if (dialog.open() == ElementListSelectionDialog.OK) {
-			Object[] types = dialog.getResult();
-		}
-
-	}
-
-//	 public class q {
-//	        public static void main(String args[]) {
-//	            Package[] pack = Package.getPackages();
-//
-//	          // print all packages, one by one
-//	            for (int i = 0; i < pack.length; i++) {
-//	                String a = pack[i].toString()  ;
-//	                System.out.println(a.replaceAll("package ", ""));
-//	            }
-//	        }
-//	    }
-	 
-	public static void listOfPackage2(IJavaElement[] list, Set<String> pack) {		
-		for (IJavaElement je : list) {
-			System.out.println(je.getElementName());
-			if (je.getElementType() == IJavaElement.PACKAGE_FRAGMENT) {
-				pack.add(je.getElementName());
-			}
-		}
-		
-	}
-
-	public static void listOfPackage(File directory, Set<String> pack) {
-		// File directory = new File(directoryName);
-
-		// get all the files from a directory
-		File[] fList = directory.listFiles();
-		for (File file : fList) {
-			if (file.isFile()) {
-				String path = file.getPath();
-				String packName = path.substring(path.indexOf("src") + 4, path.lastIndexOf('\\'));
-				pack.add(packName.replace('\\', '.'));
-			} else if (file.isDirectory()) {
-				listOfPackage(file, pack);
-				// listOfPackage(file.getAbsolutePath(), pack);
-			}
-		}
 	}
 }

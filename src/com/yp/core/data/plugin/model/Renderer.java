@@ -18,9 +18,6 @@ import org.eclipse.jdt.core.IPackageFragment;
 
 public class Renderer {
 
-//	@Inject
-//	Logger logger;
-
 	private String connProfile, schemaName, tableName, tableFullName, userName, userPassw, driverName;
 	private String schemaSeperator = ".";
 
@@ -41,6 +38,12 @@ public class Renderer {
 		importList = new ArrayList<>();
 		keyList = new ArrayList<>();
 		isMicrosoftSql = false;
+	}
+
+	public Renderer(String pSchemaName, String pTableName) {
+		this(false);
+		setSchemaName(pSchemaName);
+		setTableName(pTableName);
 	}
 
 	public Renderer(List<Column> pColumnList) {
@@ -173,7 +176,7 @@ public class Renderer {
 
 	private static final String EOL_WITH_AFTER_COMMA = ";\n";
 	private static final String EOL_DOUBLE = "\n\n";
-	private static final String SET = "		set(%s, p%s)";
+	private static final String SET = "\t\tset(%s, p%s)";
 
 	private void render(String file, String pPackage, String className) {
 		try (FileWriter output = new FileWriter(file); BufferedWriter writer = new BufferedWriter(output);) {
@@ -195,23 +198,22 @@ public class Renderer {
 				writeColumn(writer, column);
 			}
 
-			writer.write("	@Override\n");
-			writer.write("	public String getSchemaName() {\n");
-			writer.write("		return SCHEMA_NAME");
+			writer.write("\t@Override\n");
+			writer.write("\tpublic String getSchemaName() {\n");
+			writer.write("\t\treturn schemaName");
 			writer.write(EOL_WITH_AFTER_COMMA);
-			writer.write("	}");
+			writer.write("\t}");
 			writer.write(EOL_DOUBLE);
 
-			writer.write("	@Override\n");
-			writer.write("	public String getTableName() {\n");
-			writer.write("		return TABLE_NAME");
+			writer.write("\t@Override\n");
+			writer.write("\tpublic String getTableName() {\n");
+			writer.write("\t\treturn tableName");
 			writer.write(EOL_WITH_AFTER_COMMA);
-			writer.write("	}");
+			writer.write("\t}");
 			writer.write(EOL_DOUBLE);
 			writer.write("}");
 			writer.flush();
 		} catch (Exception e) {
-			// logger.log(Level.SEVERE, e.getMessage());
 			e.printStackTrace();
 		}
 	}
@@ -224,28 +226,27 @@ public class Renderer {
 			file = path + "/" + className + ".java";
 			render(file, pu.getElementName(), className);
 		} catch (Exception e) {
-			// logger.log(Level.SEVERE, e.getMessage());
 			e.printStackTrace();
 		}
 		return file;
 	}
 
 	private void writeConstructors(BufferedWriter pWriter, String className) throws IOException {
-		pWriter.write("	private static String SCHEMA_NAME = \"" + getSchemaName() + "\"");
+		pWriter.write("\tprivate static String schemaName = \"" + getSchemaName() + "\"");
 		pWriter.write(EOL_WITH_AFTER_COMMA);
-		pWriter.write("	private static String TABLE_NAME = \"" + getTableName() + "\"");
+		pWriter.write("\tprivate static String tableName = \"" + getTableName() + "\"");
 		pWriter.write(EOL_WITH_AFTER_COMMA);
 		pWriter.write(EOL_DOUBLE);
 
-		pWriter.write("	public " + className + "(){\n");
-		pWriter.write("		super()");
+		pWriter.write("\tpublic " + className + "(){\n");
+		pWriter.write("\t\tsuper()");
 		pWriter.write(EOL_WITH_AFTER_COMMA);
-		pWriter.write("		className = \"" + className + "\"");
+		pWriter.write("\t\tclassName = \"" + className + "\"");
 		pWriter.write(EOL_WITH_AFTER_COMMA);
 
 		if (!keyList.isEmpty()) {
 			String comma = "";
-			pWriter.write("		setPrimaryKeys(");
+			pWriter.write("\t\tsetPrimaryKeys(");
 			for (Column column : keyList) {
 				pWriter.write(comma + column.getFieldName());
 				comma = ", ";
@@ -254,31 +255,31 @@ public class Renderer {
 			pWriter.write(EOL_WITH_AFTER_COMMA);
 			for (Column column : keyList) {
 				if (column.isReadonly()) {
-					pWriter.write("		setFieldReadonly(" + column.getFieldName() + ", true)");
+					pWriter.write("\t\tsetFieldReadonly(" + column.getFieldName() + ", true)");
 					pWriter.write(EOL_WITH_AFTER_COMMA);
 				}
 			}
 		}
-		pWriter.write("	}");
+		pWriter.write("\t}");
 
 		pWriter.write(EOL_DOUBLE);
 
 		if (!keyList.isEmpty()) {
 			String comma = "";
-			pWriter.write("	public " + className + "(");
+			pWriter.write("\tpublic " + className + "(");
 			for (Column column : keyList) {
 				pWriter.write(comma + column.getColumnType() + " p" + column.getColumnName());
 				comma = ", ";
 			}
 			pWriter.write("){\n");
-			pWriter.write("		this()");
+			pWriter.write("\t\tthis()");
 			pWriter.write(EOL_WITH_AFTER_COMMA);
 			for (Column column : keyList) {
 				pWriter.write(String.format(SET, column.getFieldName(), column.getColumnName()));
 				pWriter.write(EOL_WITH_AFTER_COMMA);
 			}
 
-			pWriter.write("	}");
+			pWriter.write("\t}");
 		}
 	}
 
