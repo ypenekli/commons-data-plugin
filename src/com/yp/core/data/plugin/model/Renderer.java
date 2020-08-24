@@ -25,10 +25,11 @@ public class Renderer {
 	private List<Column> columnList, keyList;
 	private List<String> importList;
 	public static final Map<String, String> USER_COLUMNS = Stream
-			.of(new SimpleEntry<>("owner", "owner"), new SimpleEntry<>("remaddress", "remaddress"),
-					new SimpleEntry<>("datetime", "datetime"), new SimpleEntry<>("last_owner", "last_owner"),
-					new SimpleEntry<>("last_remaddress", "last_remaddress"),
-					new SimpleEntry<>("last_datetime", "last_datetime"))
+			.of(new SimpleEntry<>("client_name", "client_name"), new SimpleEntry<>("client_ip", "client_ip"),
+					new SimpleEntry<>("client_datetime", "client_datetime"),
+					new SimpleEntry<>("last_client_name", "last_client_name"),
+					new SimpleEntry<>("last_client_ip", "last_client_ip"),
+					new SimpleEntry<>("last_client_datetime", "last_client_datetime"))
 			.collect(toMap(SimpleEntry::getKey, SimpleEntry::getValue));
 
 	public Renderer(boolean pSuccess) {
@@ -66,7 +67,6 @@ public class Renderer {
 
 	public void setSchemaName(String pSchemaName) {
 		schemaName = pSchemaName;
-		// schemaName = pSchemaName.toLowerCase(Column.LOCALE_EN);
 	}
 
 	public String getTableName() {
@@ -75,7 +75,6 @@ public class Renderer {
 
 	public void setTableName(String pTableName) {
 		tableName = pTableName;
-		// tableName = pTableName.toLowerCase(Column.LOCALE_EN);
 	}
 
 	public String getTableFullName() {
@@ -152,7 +151,8 @@ public class Renderer {
 		keyList.clear();
 		imports.put("com.yp.core.entity.DataEntity", "com.yp.core.entity.DataEntity");
 		for (Column column : pColumnList) {
-			imports.put(column.getColumnTypeFullName(), column.getColumnTypeFullName());
+			if (!column.getColumnTypeFullName().startsWith("java.lang."))
+				imports.put(column.getColumnTypeFullName(), column.getColumnTypeFullName());
 			if (column.isDate()) {
 				imports.put("com.yp.core.tools.DateTime", "com.yp.core.tools.DateTime");
 				imports.put("java.util.Date", "java.util.Date");
@@ -176,7 +176,8 @@ public class Renderer {
 
 	private static final String EOL_WITH_AFTER_COMMA = ";\n";
 	private static final String EOL_DOUBLE = "\n\n";
-	private static final String SET = "\t\tset(%s, p%s)";
+	private static final String CONSTRUCTOR_SET1 = "%s%s p%s";
+	private static final String CONSTRUCTOR_SET2 = "\t\tset(%s, p%s)";
 
 	private void render(String file, String pPackage, String className) {
 		try (FileWriter output = new FileWriter(file); BufferedWriter writer = new BufferedWriter(output);) {
@@ -210,6 +211,8 @@ public class Renderer {
 			writer.write("\t\treturn tableName");
 			writer.write(EOL_WITH_AFTER_COMMA);
 			writer.write("\t}");
+			writer.write(EOL_DOUBLE);
+			writeCheckValues(writer);
 			writer.write(EOL_DOUBLE);
 			writer.write("}");
 			writer.flush();
@@ -268,19 +271,30 @@ public class Renderer {
 			String comma = "";
 			pWriter.write("\tpublic " + className + "(");
 			for (Column column : keyList) {
-				pWriter.write(comma + column.getColumnType() + " p" + column.getColumnName());
+				pWriter.write(String.format(CONSTRUCTOR_SET1, comma, column.getColumnType(), column.getFunctionName()));
 				comma = ", ";
 			}
 			pWriter.write("){\n");
 			pWriter.write("\t\tthis()");
 			pWriter.write(EOL_WITH_AFTER_COMMA);
 			for (Column column : keyList) {
-				pWriter.write(String.format(SET, column.getFieldName(), column.getColumnName()));
+				pWriter.write(String.format(CONSTRUCTOR_SET2, column.getFieldName(), column.getFunctionName()));
 				pWriter.write(EOL_WITH_AFTER_COMMA);
 			}
 
 			pWriter.write("\t}");
 		}
+	}
+
+	private void writeCheckValues(BufferedWriter pWriter) throws IOException {
+		pWriter.write("\t@Override\n");
+		pWriter.write("\tpublic void checkValues(){\n");
+		pWriter.write("\t\tsuper.checkValues();\n");
+		for (Column column : columnList) {
+			if (!column.getColumnType().endsWith("String"))
+				pWriter.write(String.format("\t\tcheck%s(%s);%n", column.getColumnType(), column.getFieldName()));
+		}
+		pWriter.write("\t}");
 	}
 
 	private void writeColumn(BufferedWriter pWriter, Column pColumn) throws IOException {
