@@ -29,7 +29,7 @@
             </command>        
       </menuContribution>
       <menuContribution
-            locationURI="popup:org.eclipse.ui.navigator.ProjectExplorer#PopupMenu?endof=group.edit">         
+            locationURI="popup:org.eclipse.ui.navigator.AppExplorer#PopupMenu?endof=group.edit">         
             <command
             	  id="commons-data-plugin.menu.connectionMenu"
                   commandId="commons-data-plugin.handlers.ConnectionHandler"
